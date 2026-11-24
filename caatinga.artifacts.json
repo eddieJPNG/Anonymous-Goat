@@ -1,0 +1,10 @@
+{
+  "project": "Anonymous-Goat",
+  "networks": {
+    "testnet": {
+      "contracts": {},
+      "dependencyGraph": {}
+    }
+  },
+  "version": 2
+}
