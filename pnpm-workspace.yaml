@@ -1,0 +1,26 @@
+# pnpm-only file (npm / yarn / bun ignore it). pnpm 10.26+/11.x block lifecycle
+# scripts by default; vite depends on esbuild's, so allow it.
+#
+# `packages` must be present even though this is a single-package project: pnpm 9 treats
+# any directory holding this file as a workspace root and aborts with "packages field
+# missing or empty" on install and exec. An empty list keeps pnpm 10+/11 behaviour
+# unchanged while staying valid for pnpm 9.
+packages: []
+allowBuilds:
+  esbuild: true
+
+ignoredOptionalDependencies:
+  - "@safe-global/safe-apps-provider"
+  - "@safe-global/safe-apps-sdk"
+
+overrides:
+  uuid: "^14.0.0"
+  ws: "^8.21.0"
+  axios: "^1.17.1"
+  zod: "^4.6.6"
+  "@creit.tech/stellar-wallets-kit>@trezor/connect-web": "-"
+  "@creit.tech/stellar-wallets-kit>@trezor/connect-plugin-stellar": "-"
+  "@creit.tech/stellar-wallets-kit>@hot-wallet/sdk": "-"
+  "@reown/appkit-utils>@safe-global/safe-apps-sdk": "-"
+  "@reown/appkit-utils>@safe-global/safe-apps-provider": "-"
+  "@safe-global/safe-apps-sdk>@safe-global/safe-gateway-typescript-sdk": "-"

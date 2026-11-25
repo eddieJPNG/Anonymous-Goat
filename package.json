@@ -1,0 +1,63 @@
+{
+  "name": "Anonymous-Goat",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "cargo test --manifest-path contracts/verifier/Cargo.toml",
+    "test:e2e": "bash scripts/test.sh",
+    "caatinga:build": "npx ctg build verifier",
+    "caatinga:deploy": "npx ctg deploy verifier --source ${CAATINGA_SOURCE:-alice}",
+    "caatinga:upgrade": "npx ctg upgrade verifier --source ${CAATINGA_SOURCE:-alice}",
+    "caatinga:generate": "npx ctg generate verifier",
+    "caatinga:zk:build": "npx ctg zk build main",
+    "caatinga:zk:prove": "npx ctg zk prove main",
+    "caatinga:zk:setup": "npx ctg zk build main && npx ctg zk prove main"
+  },
+  "dependencies": {
+    "@caatinga/client": "^3.14.0",
+    "@caatinga/core": "^3.14.0",
+    "@caatinga/zk": "^3.14.0",
+    "@creit.tech/stellar-wallets-kit": "^2.3.0",
+    "@stellar/stellar-sdk": "^16.0.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "buffer": "^6.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "snarkjs": "^0.7.5",
+    "vite": "^6.0.6"
+  },
+  "devDependencies": {
+    "@caatinga/cli": "^3.14.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "uuid": "^14.0.0",
+    "ws": "^8.21.0",
+    "axios": "^1.17.1",
+    "zod": "^4.6.6",
+    "@trezor/connect-web": "file:./src/stubs/empty-wallet-dep",
+    "@trezor/connect-plugin-stellar": "file:./src/stubs/empty-wallet-dep",
+    "@hot-wallet/sdk": "file:./src/stubs/hot-wallet-sdk",
+    "@creit.tech/stellar-wallets-kit": {
+      "@trezor/connect-web": "file:./src/stubs/empty-wallet-dep",
+      "@trezor/connect-plugin-stellar": "file:./src/stubs/empty-wallet-dep",
+      "@hot-wallet/sdk": "file:./src/stubs/hot-wallet-sdk"
+    },
+    "@reown/appkit-utils": {
+      "@safe-global/safe-apps-sdk": "-",
+      "@safe-global/safe-apps-provider": "-"
+    },
+    "@safe-global/safe-apps-sdk": {
+      "@safe-global/safe-gateway-typescript-sdk": "-"
+    }
+  }
+}

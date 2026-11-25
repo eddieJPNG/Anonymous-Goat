@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_standard" name="shell-type"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "error-container": "#ffdad6",
+            "surface-container-highest": "#e2e2e2",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#4d4635",
+            "tertiary": "#855300",
+            "on-secondary-fixed": "#1b1b1d",
+            "on-error-container": "#93000a",
+            "background": "#f9f9f9",
+            "on-tertiary-fixed-variant": "#653e00",
+            "tertiary-fixed-dim": "#ffb95f",
+            "outline": "#7f7663",
+            "on-tertiary-fixed": "#2a1700",
+            "inverse-primary": "#e9c349",
+            "surface-dim": "#dadada",
+            "on-error": "#ffffff",
+            "surface-tint": "#735c00",
+            "primary-fixed-dim": "#e9c349",
+            "secondary-fixed": "#e5e1e4",
+            "primary-fixed": "#ffe088",
+            "surface": "#f9f9f9",
+            "on-tertiary-container": "#633d00",
+            "secondary-fixed-dim": "#c8c6c8",
+            "surface-container-low": "#f3f3f4",
+            "primary": "#735c00",
+            "secondary": "#5f5e60",
+            "on-primary-fixed-variant": "#574500",
+            "outline-variant": "#d0c5af",
+            "surface-container": "#eeeeee",
+            "on-tertiary": "#ffffff",
+            "primary-container": "#d4af37",
+            "error": "#ba1a1a",
+            "inverse-on-surface": "#f0f1f1",
+            "tertiary-container": "#f7a00f",
+            "secondary-container": "#e5e1e4",
+            "on-background": "#1a1c1c",
+            "surface-bright": "#f9f9f9",
+            "on-primary-fixed": "#241a00",
+            "surface-variant": "#e2e2e2",
+            "on-secondary-fixed-variant": "#474649",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#656466",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#2f3131",
+            "on-surface": "#1a1c1c",
+            "on-primary-container": "#554300",
+            "surface-container-high": "#e8e8e8"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "gutter-mobile": "1rem",
+            "margin-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2.5rem",
+            "gutter": "1.5rem",
+            "margin": "2rem"
+          },
+          fontFamily: {
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "display": ["Plus Jakarta Sans", "sans-serif"],
+            "code-telemetry": ["JetBrains Mono", "monospace"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-caps": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "code-badge": ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+            "display": ["40px", { lineHeight: "48px", fontWeight: "800" }],
+            "code-telemetry": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "headline-lg-mobile": ["26px", { lineHeight: "34px", fontWeight: "700" }],
+            "headline-md": ["22px", { lineHeight: "28px", fontWeight: "600" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "label-caps": ["11px", { lineHeight: "16px", fontWeight: "700" }],
+            "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "code-badge": ["11px", { lineHeight: "14px", fontWeight: "600" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col">
+<!-- 1. Header Limpo -->
+<header class="w-full bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/25">
+<div class="h-20 max-w-5xl mx-auto px-gutter flex items-center justify-between gap-space-md">
+<!-- Logo + Título -->
+<div class="flex items-center gap-3">
+<img alt="Anonymous Goat" class="w-9 h-9 rounded-lg object-cover border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhdZ-gZYH8gIL0F932g3wpEmQI8tpb1uejSIuHVZdmedJk3y9B2HaBttgA2KdlTBUXgxuimsf0urb5-x1PlUi6dNotH4ve85lp0qctpuz94DuGQNMouP_lK-4cNiRwKqFsjdlsjerqWFwzrCYRTfg2yzQpdwPgLxMqyi2Cd0WxtOuATj8pItveYZvjLdvgdE0OS5sMus1Dy6YNB49yG-3LP_kMWU47U494agKxEMGev7k3p-WfYNYe2w"/>
+<span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">Anonymous Goat</span>
+</div>
+<!-- Direita: Badge Stellar Testnet + Carteira Freighter -->
+<div class="flex items-center gap-3">
+<div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/25">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-code-badge text-code-badge text-on-surface-variant">Stellar Testnet</span>
+</div>
+<button class="flex items-center gap-2 px-3.5 py-2 bg-[#000000] hover:bg-inverse-surface text-inverse-on-surface rounded-lg border border-[#D4AF37]/40 transition-colors" onclick="copyWallet()" title="Carteira Freighter conectada" type="button">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="font-code-telemetry text-code-telemetry tracking-tight">0x8f...4e91</span>
+<span class="material-symbols-outlined text-sm text-[#D4AF37]" id="wallet-copy-icon">content_copy</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full">
+<div class="max-w-5xl mx-auto px-gutter py-space-xl flex flex-col gap-space-xl">
+<!-- 2. Hero Simples e Direto -->
+<section class="text-center flex flex-col items-center gap-2 pt-2">
+<h1 class="font-display text-display text-on-surface tracking-tight">
+          GOTY 2026: Votação Anônima ZK
+        </h1>
+<p class="font-body-lg text-body-lg text-secondary">
+          Eleja o Melhor Jogo do Ano com privacidade via prova ZK na Stellar.
+        </p>
+</section>
+<!-- 3. Área Principal: Dois Cards Lado a Lado -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-space-lg items-stretch">
+<!-- Card 1: Grand Theft Auto VI (Voto 0) -->
+<div class="flex flex-col bg-[#000000] text-inverse-on-surface rounded-xl overflow-hidden border border-[#D4AF37] shadow-lg">
+<div class="h-60 w-full overflow-hidden bg-on-background">
+<img class="w-full h-full object-cover" data-alt="Grand Theft Auto VI cinematic promotional artwork, vibrant Miami Vice sunset gradient skies in magenta neon and amber, luxury sports cars on ocean drive, high contrast palm trees and stylized crime drama atmosphere, ultra detailed 8k game key visual." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJhBxZ72pjTlyJ1W8ZSn95AfyqQZ0jRptCnowrbi-wHZLP4NNISktabRfov16bZYLVjrkA0VpKYRpiZ5bqPff92t3P0x0HnRocIb4YWmUqzSLwytB6flHaQVwAVMwLVx-zrmWRbi9ffjAQYnxqMxAr4iXR7oUThh_OROFn35cKkhK38udT7RLLwa41905cYivaIqikn-P5qoqoYbAAXXeU6xe38ubmFDYrOvUIKC7m"/>
+</div>
+<div class="p-space-lg flex flex-col flex-1 justify-between gap-space-md">
+<div class="flex items-center justify-between gap-2">
+<h2 class="font-headline-md text-headline-md text-white tracking-tight">Grand Theft Auto VI</h2>
+<span class="font-code-badge text-code-badge text-[#D4AF37] px-2.5 py-1 rounded bg-white/5 border border-[#D4AF37]/30 shrink-0">Voto 0</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-code-telemetry text-code-telemetry">
+<span class="text-white/70">Progresso</span>
+<span class="text-[#D4AF37] font-semibold">57% • 8 votos</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-white/15 overflow-hidden">
+<div class="h-full bg-[#D4AF37] rounded-full" style="width: 57%"></div>
+</div>
+</div>
+<button class="w-full py-3 px-4 rounded-lg font-headline-sm text-headline-sm bg-[#D4AF37] hover:bg-inverse-primary text-[#000000] transition-colors flex items-center justify-center gap-2 cursor-pointer" id="btn-vote-0" onclick="castVote(0)" type="button">
+<span class="material-symbols-outlined text-lg">lock</span>
+<span>Votar com Prova ZK</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Zelda: Ocarina of Time Remake (Voto 1) -->
+<div class="flex flex-col bg-[#000000] text-inverse-on-surface rounded-xl overflow-hidden border border-[#D4AF37] shadow-lg">
+<div class="h-60 w-full overflow-hidden bg-on-background">
+<img class="w-full h-full object-cover" data-alt="Zelda Ocarina of Time legendary remake visual, the glowing golden Master Sword on a sun-drenched stone pedestal inside the Temple of Time, stained glass reflections, cinematic ethereal dust motes, mythical Nintendo high fantasy 8k render." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSJNJJrmbaa9_NuMASVni_ZAkTe47hK2olXNbpsPH8GEFgoRIRJbA8bwLWQV1ahJv0siZdjGOUq8VEIIBDXwAweuoTyWYVsMD6L9ANYExfDB0PR4dAWhCfcC55QCrKDaefKP4-e2BgRrYwdlrHt79DJov9f6BBNhSqrCaBVGs2S6Nwf4oVEh6pBr8qkoYHWJOTGjC77fvxt0W8IoOy-Ojrm4CSwfkEfdwBog_5U9V5"/>
+</div>
+<div class="p-space-lg flex flex-col flex-1 justify-between gap-space-md">
+<div class="flex items-center justify-between gap-2">
+<h2 class="font-headline-md text-headline-md text-white tracking-tight">Zelda: Ocarina of Time Remake</h2>
+<span class="font-code-badge text-code-badge text-[#D4AF37] px-2.5 py-1 rounded bg-white/5 border border-[#D4AF37]/30 shrink-0">Voto 1</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-code-telemetry text-code-telemetry">
+<span class="text-white/70">Progresso</span>
+<span class="text-[#D4AF37] font-semibold">43% • 6 votos</span>
+</div>
+<div class="w-full h-2.5 rounded-full bg-white/15 overflow-hidden">
+<div class="h-full bg-[#D4AF37] rounded-full" style="width: 43%"></div>
+</div>
+</div>
+<button class="w-full py-3 px-4 rounded-lg font-headline-sm text-headline-sm bg-[#D4AF37] hover:bg-inverse-primary text-[#000000] transition-colors flex items-center justify-center gap-2 cursor-pointer" id="btn-vote-1" onclick="castVote(1)" type="button">
+<span class="material-symbols-outlined text-lg">lock</span>
+<span>Votar com Prova ZK</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 4. Rodapé/Barra Discreta de Status ZK -->
+<footer class="w-full pt-2">
+<div class="w-full py-3 px-4 rounded-lg bg-surface-container-lowest border border-outline-variant/30 flex items-center justify-center text-center">
+<p class="font-code-telemetry text-code-telemetry text-on-surface-variant">
+            Placar: 14/16 votos • Circuito Groth16 / Poseidon ativo • Nullifier anti-voto duplo
+          </p>
+</div>
+</footer>
+</div>
+</main>
+<script>
+    function copyWallet() {
+      navigator.clipboard.writeText('0x8f...4e91');
+      const icon = document.getElementById('wallet-copy-icon');
+      icon.innerText = 'check';
+      setTimeout(() => {
+        icon.innerText = 'content_copy';
+      }, 1500);
+    }
+
+    function castVote(candidateIndex) {
+      const btn = document.getElementById('btn-vote-' + candidateIndex);
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">refresh</span><span>Gerando Prova ZK...</span>';
+
+      setTimeout(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">verified</span><span>Voto Registrado!</span>';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = originalHTML;
+        }, 2500);
+      }, 1400);
+    }
+  </script>
+</body></html>

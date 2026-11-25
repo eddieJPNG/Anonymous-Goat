@@ -1,0 +1,32 @@
+{
+  "project": "Anonymous-Goat",
+  "networks": {
+    "testnet": {
+      "contracts": {
+        "verifier": {
+          "contractId": "CDOJDVSWEFLITASNS75BWGCQFTCNE5S7E44EFLWPQEAFZELKPUOLOUC5",
+          "wasmHash": "7dae1b03fb8c64a1d530cefee668d5c33cc427f6e3738acc5851117a4137eb7b",
+          "deployedAt": "2026-11-24T23:58:54.345Z",
+          "sourcePath": "./contracts/verifier",
+          "wasmPath": "./contracts/verifier/target/wasm32v1-none/release/verifier.wasm",
+          "dependencies": [],
+          "resolvedDeployArgs": {
+            "admin": "GAG365PPS55CZWFL6KPAJFZO2VRMMEUKOVOI7YNMNKWIGKLXTFDA67OF"
+          },
+          "metadata": {
+            "gitCommit": "6649dd5888a6d2746d8e7102608681c119bc7907",
+            "rustcVersion": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+            "caatingaVersion": "3.14.0",
+            "network": "testnet",
+            "timestamp": "2026-11-24T23:58:54.340Z",
+            "checksum": "7dae1b03fb8c64a1d530cefee668d5c33cc427f6e3738acc5851117a4137eb7b"
+          }
+        }
+      },
+      "dependencyGraph": {
+        "verifier": []
+      }
+    }
+  },
+  "version": 2
+}
