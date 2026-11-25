@@ -168,4 +168,5 @@ circuits/input.json
 
 # Rust build output for the verifier contract
 contracts/verifier/target/
+contracts/verifier/test_snapshots/
 target/

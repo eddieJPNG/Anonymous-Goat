@@ -98,3 +98,69 @@ sinais no template. Para este circuito a ordem real é:
 
 **Workaround:** o contrato deve montar o `Vec<Fr>` nessa ordem exata; confirmar
 sempre via `.artifacts/zk/<circuit>/public.json` após o `zk prove`.
+
+---
+
+## Sprint 2 — Contrato verificador + deploy
+
+### F10. Argumentos `BytesN` na Stellar CLI são hex **sem** `0x`
+
+`stellar contract invoke ... --merkle-root 0x02ae…` falha com
+`Expected type bytes32 (exactly 32 bytes), but received: '0x02ae…'` — o parser de
+`ScSpecTypeBytesN` espera string hex pura (`02ae…`). Já `Address` é aceito como
+`G…` normalmente.
+
+**Workaround:** serializar `BytesN` sem prefixo (é o que
+`scripts/serialize-proof.mjs` faz), apesar de `toHex32()` dos scripts off-chain
+usarem `0x` para leitura humana.
+
+### F11. Tuplas não valem como argumento nem como retorno de contrato
+
+`get_tally` estava especificado para devolver `(u32, u32)`. No `soroban-sdk` 27 a
+conversão `Vec<Val>`/`Topics` existe para tuplas (`tuple.rs`), mas **não** há
+`IntoVal<Env, Val>` para tuplas — e é esse trait que `IntoValForContractFn`
+(exigido pelo macro `#[contractimpl]`) exige. Só `Vec<Val>` e `Topics` têm
+`TryFromVal` de tupla.
+
+**Workaround:** `get_tally` devolve o struct `#[contracttype] Tally { gta6, zelda }`,
+que é o idioma Soroban para esse caso. A UI lê `{"gta6":…,"zelda":…}`.
+
+### F12. `--embed-vk` regenera as chaves: o ciclo é `build → prove → test-vectors`
+
+Como em F8, `ctg zk build main --embed-vk` faz uma nova dev ceremony **e** reescreve
+`src/vk.rs`. Como `vote` verifica contra a VK embutida, qualquer prova ou vetor de
+teste antigo passa a ser inválido silenciosamente.
+
+**Workaround:** fluxo fixo e documentado no README:
+
+```bash
+npx ctg zk build main --embed-vk && npx ctg zk prove main && node scripts/gen-test-vectors.mjs
+```
+
+`scripts/gen-test-vectors.mjs` grava `src/test_vectors.rs` (prova + public signals)
+para que `cargo test` seja auto-contido sem depender de `.artifacts/` (gitignored).
+
+### F13. `vk.rs` gerado quebra o `cargo clippy`
+
+O código emitido por `--embed-vk` chama `G1Affine::from_array(&env, …)` com `env`
+já sendo `&Env`, gerando 9 avisos `clippy::needless_borrow`. O arquivo é regenerado
+a cada build, então editá-lo não adianta.
+
+**Workaround:** `#[allow(clippy::needless_borrow)]` apenas no `mod vk;` — o resto do
+crate continua com lint estrito.
+
+### F14. `#[contractevent]` usa o nome do struct em snake_case como tópico
+
+Sem `topics = [...]`, o primeiro tópico do evento `VoteCast` seria `"vote_cast"`
+(`to_snake_case()` do identificador), não `"VoteCast"`.
+
+**Workaround:** declarar `#[contractevent(topics = ["VoteCast"], data_format = "single-value")]`
+para o tópico ser literalmente `VoteCast` e o payload ser o `u32` do voto.
+
+### F15. `proof.json` rotula a curva como `bls12381` (sem hífen)
+
+`proof.curve` é `"bls12381"`, não `"bls12-381"` (o nome usado em outras partes do
+ecossistema, ex. `pot12_final.ptau` do Caatinga).
+
+**Workaround:** checar `curve === "bls12381"` nos scripts de serialização.
+

@@ -1,10 +1,10 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype,
+    contract, contracterror, contractevent, contractimpl, contracttype,
     crypto::bls12_381::{
         Bls12381Fr as Fr, Bls12381G1Affine as G1Affine, Bls12381G2Affine as G2Affine,
     },
-    vec, Address, BytesN, Env, Vec,
+    vec, Address, BytesN, Env, Map, Vec, U256,
 };
 
 #[contracterror]
@@ -13,12 +13,54 @@ use soroban_sdk::{
 pub enum Groth16Error {
     MalformedVerifyingKey = 0,
     AdminNotSet = 1,
+    AlreadyInitialized = 2,
+    NotInitialized = 3,
+    Unauthorized = 4,
+    RootMismatch = 5,
+    ElectionMismatch = 6,
+    InvalidVote = 7,
+    InvalidProof = 8,
+    NullifierAlreadyUsed = 9,
 }
 
 #[derive(Clone)]
 #[contracttype]
-enum DataKey {
+pub enum DataKey {
     Admin,
+    MerkleRoot,
+    ElectionId,
+    Nullifiers,
+    Tally,
+}
+
+/// Public vote counts. `gta6` counts `vote == 0`, `zelda` counts `vote == 1`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct Tally {
+    pub gta6: u32,
+    pub zelda: u32,
+}
+
+/// The four public signals of the circuit, in the caller's terms. The contract
+/// re-orders them into the snarkjs order `[nullifier, merkleRoot, electionId,
+/// vote]` before handing them to the verifier.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct PublicInputs {
+    pub merkle_root: BytesN<32>,
+    pub election_id: BytesN<32>,
+    pub nullifier: BytesN<32>,
+    pub vote: u32,
+}
+
+/// Emitted once per accepted vote. The nullifier is a topic so indexers can
+/// spot a replay attempt without decoding the payload.
+#[contractevent(topics = ["VoteCast"], data_format = "single-value")]
+#[derive(Clone)]
+pub struct VoteCast {
+    #[topic]
+    pub nullifier: BytesN<32>,
+    pub vote: u32,
 }
 
 #[derive(Clone)]
@@ -39,18 +81,28 @@ pub struct Proof {
     pub c: G1Affine,
 }
 
+/// Adds one vote to the matching bucket. Kept as a free function so both
+/// options are unit-testable without a full proving round-trip.
+fn increment_tally(tally: &mut Tally, vote: u32) {
+    if vote == 0 {
+        tally.gta6 += 1;
+    } else {
+        tally.zelda += 1;
+    }
+}
+
 #[contract]
 pub struct Groth16Verifier;
 
 #[contractimpl]
 impl Groth16Verifier {
-    /// Stores the account allowed to call `upgrade`. Caatinga passes the
-    /// deploying identity through `deployArgs: { admin: "${source.address}" }`.
+    /// Stores the account allowed to call `upgrade` and `initialize`. Caatinga
+    /// passes the deploying identity through `deployArgs: { admin: "${source.address}" }`.
     pub fn __constructor(env: Env, admin: Address) {
         env.storage().instance().set(&DataKey::Admin, &admin);
     }
 
-    /// Returns the account allowed to call `upgrade`.
+    /// Returns the account allowed to call `upgrade` and `initialize`.
     pub fn admin(env: Env) -> Result<Address, Groth16Error> {
         env.storage()
             .instance()
@@ -64,6 +116,133 @@ impl Groth16Verifier {
     pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) -> Result<(), Groth16Error> {
         Self::admin(env.clone())?.require_auth();
         env.deployer().update_current_contract_wasm(new_wasm_hash);
+        Ok(())
+    }
+
+    /// Freezes the election parameters: the Merkle root of the eligible voters
+    /// and the election id that domains every nullifier.
+    ///
+    /// `admin` must be the account stored by the constructor and must sign the
+    /// call, so no third party can re-point the election after deployment.
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        merkle_root: BytesN<32>,
+        election_id: BytesN<32>,
+    ) -> Result<(), Groth16Error> {
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(Groth16Error::AdminNotSet)?;
+        if stored_admin != admin {
+            return Err(Groth16Error::Unauthorized);
+        }
+        admin.require_auth();
+
+        if env.storage().instance().has(&DataKey::MerkleRoot) {
+            return Err(Groth16Error::AlreadyInitialized);
+        }
+
+        env.storage()
+            .instance()
+            .set(&DataKey::MerkleRoot, &merkle_root);
+        env.storage()
+            .instance()
+            .set(&DataKey::ElectionId, &election_id);
+        env.storage()
+            .instance()
+            .set(&DataKey::Tally, &Tally { gta6: 0, zelda: 0 });
+        Ok(())
+    }
+
+    /// Current vote counts. Errors before `initialize`, so a caller never
+    /// mistakes "not set up yet" for "no votes yet".
+    pub fn get_tally(env: Env) -> Result<Tally, Groth16Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Tally)
+            .ok_or(Groth16Error::NotInitialized)
+    }
+
+    /// Accepts a Groth16 proof of eligibility and records the vote.
+    ///
+    /// Order of checks: election config → public inputs → proof → nullifier →
+    /// tally → event. Nothing is written until every check has passed.
+    pub fn vote(env: Env, proof: Proof, public_inputs: PublicInputs) -> Result<(), Groth16Error> {
+        let PublicInputs {
+            merkle_root,
+            election_id,
+            nullifier,
+            vote,
+        } = public_inputs;
+
+        // The election must be frozen before any ballot is counted.
+        let stored_root: BytesN<32> = env
+            .storage()
+            .instance()
+            .get(&DataKey::MerkleRoot)
+            .ok_or(Groth16Error::NotInitialized)?;
+        let stored_election: BytesN<32> = env
+            .storage()
+            .instance()
+            .get(&DataKey::ElectionId)
+            .ok_or(Groth16Error::NotInitialized)?;
+
+        if merkle_root != stored_root {
+            return Err(Groth16Error::RootMismatch);
+        }
+        if election_id != stored_election {
+            return Err(Groth16Error::ElectionMismatch);
+        }
+        // The circuit already constrains `vote * (vote - 1) === 0`; this is a
+        // cheap early exit that keeps a malformed payload out of the pairing.
+        if vote > 1 {
+            return Err(Groth16Error::InvalidVote);
+        }
+
+        // snarkjs orders public signals as outputs first, then public inputs
+        // in `{public [...]}` declaration order. `nullifier` is an output, so
+        // the order is fixed by the circuit, not by this struct.
+        let pub_signals = Vec::from_array(
+            &env,
+            [
+                Fr::from_bytes(nullifier.clone()),
+                Fr::from_bytes(merkle_root.clone()),
+                Fr::from_bytes(election_id.clone()),
+                Fr::from_u256(U256::from_u32(&env, vote)),
+            ],
+        );
+
+        if !Self::verify_proof_embedded(env.clone(), proof, pub_signals)? {
+            return Err(Groth16Error::InvalidProof);
+        }
+
+        // One nullifier per (secret, electionId): a second ballot from the
+        // same voter is rejected without revealing which leaf it came from.
+        let mut nullifiers: Map<BytesN<32>, bool> = env
+            .storage()
+            .instance()
+            .get(&DataKey::Nullifiers)
+            .unwrap_or_else(|| Map::new(&env));
+        if nullifiers.contains_key(nullifier.clone()) {
+            return Err(Groth16Error::NullifierAlreadyUsed);
+        }
+        nullifiers.set(nullifier.clone(), true);
+
+        let mut tally: Tally = env
+            .storage()
+            .instance()
+            .get(&DataKey::Tally)
+            .unwrap_or(Tally { gta6: 0, zelda: 0 });
+        increment_tally(&mut tally, vote);
+
+        env.storage()
+            .instance()
+            .set(&DataKey::Nullifiers, &nullifiers);
+        env.storage().instance().set(&DataKey::Tally, &tally);
+
+        VoteCast { nullifier, vote }.publish(&env);
         Ok(())
     }
 
@@ -110,7 +289,7 @@ impl Groth16Verifier {
             return Err(Groth16Error::MalformedVerifyingKey);
         }
 
-        let mut vk_x = vk.ic.get(0).unwrap();
+        let mut vk_x = vk.ic.get(0).ok_or(Groth16Error::MalformedVerifyingKey)?;
         for (s, v) in pub_signals.iter().zip(vk.ic.iter().skip(1)) {
             let prod = bls.g1_mul(&v, &s);
             vk_x = bls.g1_add(&vk_x, &prod);
@@ -125,4 +304,9 @@ impl Groth16Verifier {
 }
 
 mod test;
+mod test_vectors;
+// `vk.rs` is emitted by `ctg zk build --embed-vk` and passes `&env` to
+// constructors that already take a reference; allow that lint only here so the
+// rest of the crate keeps being checked strictly.
+#[allow(clippy::needless_borrow)]
 mod vk;
