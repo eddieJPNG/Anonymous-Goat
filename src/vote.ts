@@ -1,4 +1,5 @@
 import { formatCaatingaError } from "@caatinga/core/browser";
+import { DEFAULT_READ_SOURCE_ACCOUNT } from "@caatinga/client";
 import { caatingaClient } from "./caatinga.js";
 import type { Proof, PublicInputs, Tally } from "./bindings/verifier/src/types.js";
 
@@ -66,6 +67,16 @@ function collectText(value: unknown, depth = 0, seen = new Set<unknown>()): stri
 export function describeVoteError(caught: unknown): string {
   const evidence = collectText(caught);
 
+  // The wallet's account has no ledger entry (never funded): the simulation
+  // fails before reaching the contract. The vote panel offers the fix.
+  if (/CAATINGA_SIMULATION_ACCOUNT_NOT_FOUND|Account not found:/i.test(evidence)) {
+    return (
+      "This wallet account has no XLM, so it does not exist on this network yet and cannot " +
+      'submit transactions. Use the "Fund testnet account" button in the vote panel, or ' +
+      "switch to a funded account in your wallet, then try again."
+    );
+  }
+
   const codeMatch = evidence.match(/Error\(Contract,\s*#(\d+)\)/);
   if (codeMatch) {
     const code = Number(codeMatch[1]);
@@ -112,5 +123,14 @@ export async function castVote(
 
 /** Reads the public tally. Throws if the election was never initialized. */
 export async function fetchTally(): Promise<Tally> {
-  return caatingaClient.contract("verifier").read<Tally>("get_tally");
+  // Read-only call pinned to the canonical placeholder source instead of the
+  // connected wallet: a wallet that was never funded has no ledger entry, and
+  // using it as the simulation source fails with
+  // CAATINGA_SIMULATION_ACCOUNT_NOT_FOUND — which would blank the scoreboard
+  // for exactly the visitors who need it most. `get_tally` never needs the
+  // caller's identity, and the placeholder is never sent to the RPC (the SDK
+  // builds the transaction against a local null account).
+  return caatingaClient.contract("verifier").read<Tally>("get_tally", {
+    sourceAccount: DEFAULT_READ_SOURCE_ACCOUNT,
+  });
 }

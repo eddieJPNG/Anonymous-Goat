@@ -5,12 +5,14 @@ import artifactsJson from "../caatinga.artifacts.json";
 import gtaCover from "../assets/GTAVI.png";
 import zeldaCover from "../assets/TLOZOOTR.jpg";
 import { ContractNotDeployed } from "./components/ContractNotDeployed";
+import { FundNotice } from "./components/FundNotice";
 import { GameCard } from "./components/GameCard";
 import { LoadingModal } from "./components/LoadingModal";
 import { WalletButton } from "./components/WalletButton";
 import { WalletModal } from "./components/WalletModal";
 import { appNetwork } from "./network.js";
 import { stellarWalletAdapter } from "./wallet.js";
+import type { AccountState } from "./funding.js";
 import { demoTree, demoVoter } from "./zk/demo-tree.js";
 import { buildVoteInput, proveVote } from "./zk/prove.js";
 import { toBindingProof, toPublicInputs } from "./zk/serialize.js";
@@ -40,6 +42,9 @@ function AppBody() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Ledger state of the connected wallet's account ("missing" = never funded,
+  // published by <FundNotice/>); votes are gated while it cannot source a tx.
+  const [accountState, setAccountState] = useState<AccountState>("unknown");
 
   const refreshTally = useCallback(async () => {
     try {
@@ -54,12 +59,27 @@ function AppBody() {
     void refreshTally();
   }, [refreshTally]);
 
+  // On disconnect the notice unmounts without reporting back, so reset here.
+  useEffect(() => {
+    if (!publicKey) {
+      setAccountState("unknown");
+    }
+  }, [publicKey]);
+
+  const handleFunded = useCallback(() => {
+    setSuccess("Testnet account funded — you can vote now.");
+  }, []);
+
   async function handleVote(vote: 0 | 1) {
     setError(null);
     setSuccess(null);
 
     if (!publicKey) {
       setError("Connect a wallet before voting.");
+      return;
+    }
+    if (accountState === "missing") {
+      setError("Fund the wallet account first — see the notice above the vote buttons.");
       return;
     }
     if (phase !== "idle") {
@@ -194,6 +214,14 @@ function AppBody() {
               path, then verified on-chain. Each elector may vote once.
             </p>
 
+            {publicKey ? (
+              <FundNotice
+                publicKey={publicKey}
+                onAccountState={setAccountState}
+                onFunded={handleFunded}
+              />
+            ) : null}
+
             <div className="game-grid">
               <GameCard
                 title="GTA 6"
@@ -201,7 +229,7 @@ function AppBody() {
                 cover={gtaCover}
                 vote={0}
                 tally={tally?.gta6}
-                disabled={busy}
+                disabled={busy || accountState === "missing"}
                 busy={busy}
                 onVote={(vote) => void handleVote(vote)}
               />
@@ -211,7 +239,7 @@ function AppBody() {
                 cover={zeldaCover}
                 vote={1}
                 tally={tally?.zelda}
-                disabled={busy}
+                disabled={busy || accountState === "missing"}
                 busy={busy}
                 onVote={(vote) => void handleVote(vote)}
               />

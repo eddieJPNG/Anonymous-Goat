@@ -152,6 +152,11 @@ Notas:
   frontend apenas a transação (mesmo contrato, mesma serialização).
 - Os eleitores 0 e 2 já votaram no contrato implantado; o seletor começa em **1**
   (votos `0` e `3` ainda disponíveis).
+- **Carteira sem fundos:** uma conta que nunca recebeu XLM não existe no ledger, e
+  toda chamada com ela como *source* falha (`CAATINGA_SIMULATION_ACCOUNT_NOT_FOUND`).
+  O placar por isso lê com fonte fixa (placeholder, ignorando a carteira) e o painel
+  de voto mostra o aviso **"Fund testnet account"** — o botão cria a conta pelo
+  friendbot da rede e libera os botões de voto.
 
 ## Contrato implantado (testnet)
 

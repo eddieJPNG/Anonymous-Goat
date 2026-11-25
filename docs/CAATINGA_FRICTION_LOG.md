@@ -270,3 +270,46 @@ o exit code com `-e` temporariamente levantado; os asserts são
 `grep -q 'Error(Contract, #8)'` / `#9` + checagem de que o placar final não
 mudou.
 
+---
+
+## Correção pós-Sprints — carteira não financiada
+
+### F24. A carteira conectada vence como *source* de leitura — e derruba o placar
+
+O `CaatingaContractClient` resolve a fonte de `read`/`simulate` na ordem
+`options.sourceAccount` > **carteira conectada** > `config.readSourceAccount` >
+placeholder. Configure `readSourceAccount` não adianta enquanto houver
+carteira: a precedência da carteira é maior por design. Consequência observada
+com uma carteira Freighter nova (conta `GDF3…`, nunca financiada):
+`get_tally` e `vote` falham com
+`CAATINGA_SIMULATION_ACCOUNT_NOT_FOUND` (`Account not found: GDF3…`) e o
+placar da UI vira `—` — o visitante com a carteira *errada* é exatamente
+aquele que mais precisa ver o resultado.
+
+**Workaround:**
+
+- `fetchTally()` passa `read(..., { sourceAccount: DEFAULT_READ_SOURCE_ACCOUNT })`
+  por chamada — o placeholder null-account nunca vai ao RPC (o SDK monta a
+  transação localmente), então o placar lê com qualquer carteira, ou nenhuma.
+- `describeVoteError` mapeia `CAATINGA_SIMULATION_ACCOUNT_NOT_FOUND` para
+  instrução acionável (financiar ou trocar de conta).
+- `<FundNotice/>` detecta a conta sem entrada no ledger e mostra
+  **"Fund testnet account"**; os botões de voto ficam desabilitados enquanto
+  `accountState === "missing"`. O check usa um `getNetwork()` de pré-flight
+  porque `getAccount` converte *qualquer* falha em "Account not found" — sem
+  ele, uma queda de RPC pareceria carteira sem fundos.
+
+### F25. Friendbot mudou o parâmetro: `account` → `addr`
+
+`GET https://friendbot.stellar.org/?addr=…` funciona; `?account=…` (o formato
+antigo, presente em boa parte dos tutoriais) devolve **HTTP 400** com
+`invalid_field: "addr"` / `"invalid address: must be a valid G or C address"`
+— mesmo para endereços `G…` perfeitamente válidos e já financiados.
+
+**Workaround:** usar `Server.fundAddress(address)` do `@stellar/stellar-sdk`
+(rpc): ele descobre a `friendbotUrl` via `getNetwork()`, publica `?addr=…`,
+espera a transação chegar a `SUCCESS` e repassa a mensagem de erro do
+friendbot. A rede sem `friendbotUrl` (mainnet) cai num erro claro
+("No friendbot URL configured…") que a UI traduz para "só funciona em redes de
+teste".
+
