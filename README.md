@@ -12,11 +12,13 @@ uma lista pré-aprovada (Merkle tree de profundidade 4) e que ainda não votou �
 identidade da lista controla**. O contrato Soroban verifica a prova on-chain, consome um
 *nullifier* (um por `(secret, electionId)`, logo sem voto duplo) e atualiza o placar público.
 
-> **Status:** Sprints 1–4 concluídas — circuito compilado, contrato na testnet aceitando
-> provas, frontend E2E (conectar carteira → provar no navegador → votar → placar
-> atualizado) e suíte automatizada de rejeição. Documentação/demo final (Sprint 5)
-> pendente. Escopo congelado em [`Documents/SSD.md`](Documents/SSD.md), plano em
-> [`Documents/PLAN.MD`](Documents/PLAN.MD).
+> **Status:** Sprints 1–5 concluídas — circuito compilado, contrato na testnet
+> aceitando provas, frontend E2E (conectar carteira → provar no navegador → votar →
+> placar atualizado), suíte automatizada de rejeição e documentação final (README,
+> [modelo de ameaças](docs/THREAT_MODEL.md), friction log). Restam à autoria a
+> gravação do vídeo demo (≤ 3 min) e a publicação do repositório — ver
+> [Checklist final do bounty](#checklist-final-do-bounty). Escopo congelado em
+> [`Documents/SSD.md`](Documents/SSD.md), plano em [`Documents/PLAN.MD`](Documents/PLAN.MD).
 
 ## Requisitos
 
@@ -103,6 +105,34 @@ npx ctg deploy verifier --network testnet --source alice
 
 > O `ctg zk build` roda uma **dev ceremony** local e regenera as chaves **a cada build**.
 > Depois de qualquer `zk build`, refaça `prove` (+ `gen-test-vectors`) antes de invocar ou testar.
+
+### Deploy reproduzível (testnet)
+
+```bash
+export PATH="$HOME/.cargo/bin:$PATH"
+
+npx ctg zk build main --embed-vk      # VK real gravada em src/vk.rs (regenera chaves!)
+npx ctg zk prove main                 # re-prova contra a VK recém-gerada
+node scripts/gen-test-vectors.mjs     # regrava src/test_vectors.rs
+cargo test --manifest-path contracts/verifier/Cargo.toml
+
+npx ctg build verifier                # → contracts/verifier/target/wasm32v1-none/release/verifier.wasm
+npx ctg deploy verifier --network testnet --source alice   # imprime o Contract ID e
+                                                           # grava caatinga.artifacts.json
+```
+
+Depois do deploy, congelar a eleição (uma única vez) com a raiz/`electionId` da
+árvore demo — os valores saem de `node scripts/generate-input.mjs --root`:
+
+```bash
+stellar contract invoke --id <CONTRACT_ID> --source alice --network testnet -- initialize \
+  --admin <PUBLIC_KEY_ALICE> --merkle-root <64 hex sem 0x> --election-id <64 hex sem 0x>
+```
+
+O `caatinga.artifacts.json` atualizado é o que o frontend lê (ID do contrato +
+rede); não edite à mão. Em ambiente limpo, `npm install` + os comandos acima +
+`npm run dev` são suficientes para reproduzir tudo — a suíte E2E
+(`npm run test:e2e`) faz inclusive um deploy do zero a cada execução.
 
 ### Smoke test na testnet
 
@@ -230,8 +260,50 @@ menos que se use `--allow-dev-ceremony` conscientemente. Veja
 - Quem paga a taxa da transação é público; o anonimato é sobre a identidade na lista.
 - O voto é público on-chain; o anonimato é do eleitor, não da escolha.
 - A dev ceremony não é segura para produção.
+- O admin define a raiz Merkle (aceitável em testnet); um frontend/RPC de leitura
+  comprometido pode exibir placar falso — o dado canônico é o do contrato.
+
+Modelo completo — ativos, modelo de confiança, garantias, tabela de ameaças
+(T1–T12) e verificação independente:
+**[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)**.
+
+## Roteiro do vídeo demo (≤ 3 min)
+
+Gravação pela autoria — as 6 cenas exigidas pelo bounty, ~25–30 s cada:
+
+1. **Conexão da carteira** — `npm run dev` → botão *Connect* → Freighter. Se a
+   conta estiver sem fundos, mostrar o aviso **"Fund testnet account"** e o clique
+   nele (a conta é criada e os botões de voto liberam).
+2. **Seleção do jogo** — escolher o eleitor demo no seletor e clicar num dos
+   cards (GTA 6 = `0` ou Zelda = `1`).
+3. **Geração da prova** — spinner → prova Groth16 gerada **no navegador** (~1 s).
+4. **Voto aceito** — confirmação na Freighter, transação aceita e o placar
+   incrementa em `get_tally`.
+5. **Prova inválida rejeitada** — saída de `npm run test:e2e` mostrando
+   `Error(Contract, #8)` (`InvalidProof`).
+6. **Voto duplo rejeitado** — votar de novo com o mesmo eleitor na própria UI →
+   `Error(Contract, #9)` (`NullifierAlreadyUsed`) na tela.
+
+Fecho sugerido: contrato na testnet + links (repositório, vídeo, friction log).
+
+## Checklist final do bounty
+
+Revisão dos entregáveis ([`Documents/SSD.md` §11](Documents/SSD.md),
+[Sprint 5 do plano](Documents/PLAN.MD)):
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Repositório com circuito, contrato, frontend, scripts e testes | ✅ pronto — **publicar** (autoria) |
+| 2 | README reproduzível (arquitetura, deploy, comandos Caatinga, ameaças, testes) | ✅ esta página |
+| 3 | Caatinga friction log incluído | ✅ [`docs/CAATINGA_FRICTION_LOG.md`](docs/CAATINGA_FRICTION_LOG.md) (F1–F25) |
+| 4 | Modelo de ameaças e limitações | ✅ [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) |
+| 5 | Testes automatizados (prova válida, inválida, voto duplo) | ✅ `npm test` (16) + `npm run test:e2e` (3) |
+| 6 | Log de execução dos testes | ✅ [`docs/E2E_TEST_LOG.txt`](docs/E2E_TEST_LOG.txt) |
+| 7 | Vídeo demo ≤ 3 min com link público | ⬜ **gravar** (autoria) — roteiro acima |
+| 8 | Links de repositório e vídeo prontos para submissão | ⬜ preencher na submissão (autoria) |
 
 ## Referências
 
 - Friction log do Caatinga: [`docs/CAATINGA_FRICTION_LOG.md`](docs/CAATINGA_FRICTION_LOG.md)
-- Modelo de ameaças: `docs/THREAT_MODEL.md` (pendente — Sprint 5)
+- Modelo de ameaças: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
+- Log da suíte E2E: [`docs/E2E_TEST_LOG.txt`](docs/E2E_TEST_LOG.txt)

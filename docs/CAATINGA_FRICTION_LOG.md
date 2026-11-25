@@ -313,3 +313,23 @@ friendbot. A rede sem `friendbotUrl` (mainnet) cai num erro claro
 ("No friendbot URL configured…") que a UI traduz para "só funciona em redes de
 teste".
 
+## Revisão final (Sprint 5 — Dia 7)
+
+- **25 fricções** (F1–F25) em 5 sprints + 1 correção pós-sprints:
+  setup/circuito **F1–F8**, contrato/deploy **F9–F15**, frontend **F16–F20**,
+  testes **F21–F23**, carteira não financiada **F24–F25**.
+- Padrões recorrentes:
+  1. **a toolchain ZK regenera chaves a cada `zk build`** — ciclo obrigatório
+     `build → prove → gen-test-vectors → cargo test` (F8, F12);
+  2. **divergências entre documentação/tutoriais e o comportamento real**
+     (Stellar CLI 30 (`transaction`→`tx`), friendbot `account`→`addr`,
+     ordem dos public signals, formato da curva) — quase todos resolvidos
+     lendo o código-fonte das ferramentas;
+  3. **a simulação Soroban exige conta existente como `source`** — afetou
+     leitura do placar e voto com carteira nova (F19, F24).
+- Todos os workarounds estão aplicados no código ou documentados no README;
+  nenhum segredo commitado (guard de strkey no `scripts/test.sh`, F21).
+- Ferramenta: Caatinga CLI 3.14.0 em testnet — uso estável após os ajustes;
+  as fricções restantes são do ecossistema Stellar/circom, não do Caatinga
+  em si (a dev ceremony e a integração `ctg zk` funcionaram como documentado).
+
