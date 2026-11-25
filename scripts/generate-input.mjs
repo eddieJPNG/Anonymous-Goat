@@ -43,6 +43,7 @@ function demoSecret(i) {
   const h = createHash("sha256").update(`anonymous-goat/demo-voter/${i}`).digest();
   return BigInt(`0x${h.toString("hex")}`) % R;
 }
+export { demoSecret };
 
 /** @returns {{levels: bigint[][], root: bigint}} */
 export function buildDemoTree() {

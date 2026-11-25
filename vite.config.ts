@@ -26,6 +26,18 @@ function templateManualChunks(id: string): string | undefined {
   return undefined;
 }
 
+// `.wasm` and `.zkey` are consumed by snarkjs in the browser through `fetch()`
+// + `WebAssembly.compile`, so they must arrive as bytes. Decoding them as UTF-8
+// corrupts the payload (and `application/json` makes the browser reject the
+// response), which surfaces later as a baffling witness-calculation failure.
+const BINARY_ARTIFACT_TYPES: Record<string, string> = {
+  ".wasm": "application/wasm",
+  ".zkey": "application/octet-stream",
+  ".r1cs": "application/octet-stream",
+  ".wtns": "application/octet-stream",
+  ".ptau": "application/octet-stream",
+};
+
 function zkArtifactsPlugin(): Plugin {
   const artifactsDir = path.resolve(process.cwd(), ".artifacts/zk/main");
 
@@ -34,7 +46,7 @@ function zkArtifactsPlugin(): Plugin {
     res: {
       statusCode: number;
       setHeader(name: string, value: string): void;
-      end(chunk?: string): void;
+      end(chunk?: Buffer | string): void;
     },
     next: () => void
   ) => {
@@ -59,8 +71,15 @@ function zkArtifactsPlugin(): Plugin {
         return;
       }
 
-      res.setHeader("Content-Type", "application/json; charset=utf-8");
-      res.end(data.toString("utf8"));
+      const ext = path.extname(filePath).toLowerCase();
+      // Only `.json` is text; everything else (`.wasm`, `.zkey`, `.sym`, …) is
+      // sent as raw bytes so `fetch().arrayBuffer()` gets an uncorrupted file.
+      const contentType =
+        ext === ".json"
+          ? "application/json; charset=utf-8"
+          : (BINARY_ARTIFACT_TYPES[ext] ?? "application/octet-stream");
+      res.setHeader("Content-Type", contentType);
+      res.end(contentType.startsWith("application/json") ? data.toString("utf8") : data);
     });
   };
 

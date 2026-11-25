@@ -164,3 +164,66 @@ ecossistema, ex. `pot12_final.ptau` do Caatinga).
 
 **Workaround:** checar `curve === "bls12381"` nos scripts de serialização.
 
+---
+
+## Sprint 3 — Frontend
+
+### F16. Vite dev server corrompe `.wasm`/`.zkey` (UTF-8 + `application/json`)
+
+O plugin de artefatos ZK devolvia todo arquivo com
+`Content-Type: application/json; charset=utf-8` e `data.toString("utf8")`. Para
+`.wasm` isso destrói os bytes (UTF-8 invalido vira U+FFFD) e o navegador recusa
+o `WebAssembly.compileStreaming` — o sintoma é uma falha de witness
+calculation nada a ver com a causa. `.zkey` idem, mais silencioso.
+
+**Workaround:** em `vite.config.ts`, servir só `.json` como texto; `.wasm` como
+`application/wasm` e `.zkey`/`.r1cs`/`.wtns`/`.ptau` como
+`application/octet-stream`, sempre via `res.end(data)` (Buffer). Validar com
+`curl | sha256sum` contra o arquivo em disco (F16 evidência: hashes idênticos).
+
+### F17. `snarkjs` não publica `.d.ts`
+
+O pacote só expõe `main.js`/`build/*.js` e o TypeScript falha com
+`Could not find a declaration file for module 'snarkjs'`.
+
+**Workaround:** `src/snarkjs.d.ts` declarando apenas o usado no browser
+(`groth16.fullProve` com URLs de string e `groth16.verify`). O parâmetro
+`input` precisa ser `object` (não `Record<string, unknown>`) para aceitar
+interfaces sem index signature.
+
+### F18. Duas versões de `ffjavascript` no mesmo `node_modules`
+
+`circomlibjs` exige `ffjavascript@0.2.63` e `snarkjs@0.7.5` exige `0.3.1`. O npm
+hoista a antiga no topo e deixa a nova aninhada em
+`node_modules/snarkjs/node_modules/ffjavascript` — ok por acidente, mas
+qualquer `dedupe`/instalador alternativo (pnpm/yarn pnp) pode quebrar o
+circomlibjs dos scripts off-chain.
+
+**Workaround:** manter `npm install` (package-lock) como única fonte de verdade;
+não forçar dedupe.
+
+### F19. Código de erro do contrato se perde no caminho `read`/`simulate`
+
+Erros de contrato chegam ao browser de formas diferentes:
+
+- `invoke`/`buildXdr`: a string `Transaction simulation failed: "HostError: Error(Contract, #8)"`
+  é preservada → regex `Error\(Contract,\s*#(\d+)\)` funciona.
+- `read`/`simulate` (via `AssembledTransaction.result`): o SDK converte o `Err`
+  num objeto com `message` **vazio** (`errorTypes[i] = { message: doc }`), e o
+  Caatinga monta `… returned a contract error: .` — o número some.
+
+**Workaround:** `src/vote.ts` mapeia `#0–#9` para mensagens humanas e, no caminho
+que perde o número, cai no `formatCaatingaError`. Os testes de rejeição da
+Sprint 4 inspecionam o caminho `invoke` (onde o código é confiável).
+
+### F20. Stellar CLI 30 renomeou `transaction` → `tx`
+
+`stellar transaction sign/send` não existe mais; o binário responde
+`unrecognized subcommand 'transaction'`. O `ctg doctor` só avisa de versões
+*maiores* que as testadas (28), então esse *rename* passa batido.
+
+**Workaround:** `stellar tx sign <xdr> --sign-with-key <id>` e
+`stellar tx send <xdr> --network testnet`. `tx simulate` exige
+`--source-account`, mas não é preciso: `buildXdr` do Caatinga já roda a
+simulação ao montar.
+
