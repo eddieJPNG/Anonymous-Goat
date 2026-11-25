@@ -1,0 +1,69 @@
+
+=== Anonymous Goat — Sprint 4 E2E tests (2026-11-25T15:28:14Z) ===
+network=testnet source=alice
+
+=== Preconditions ===
+admin=GAG365PPS55CZWFL6KPAJFZO2VRMMEUKOVOI7YNMNKWIGKLXTFDA67OF
+
+=== Demo eligibility tree ===
+merkleRoot=02ae654d64e8854e6a56f2da280bd14bd3a8ff00240094dbfc9353956d6a5f45
+electionId=0c5def8ce477d4bbdf7c2dc827dda193a105aab05f210c923df34abe7bebd271
+
+=== Deploying a fresh verifier contract ===
+ℹ️  Uploading contract WASM…
+ℹ️  Skipping install because wasm already installed
+ℹ️  Deploying contract using wasm hash 7dae1b03fb8c64a1d530cefee668d5c33cc427f6e3738acc5851117a4137eb7b
+ℹ️  Simulating transaction…
+ℹ️  Signing transaction: 38e9b2c5a39780b0405e020b17be0d5b379941446996a70f22c04e4b3e58bc2c
+🌎 Sending transaction…
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/38e9b2c5a39780b0405e020b17be0d5b379941446996a70f22c04e4b3e58bc2c
+🔗 https://lab.stellar.org/r/testnet/contract/CCYNZRGRDN2CNB5SEAB4VD6ELBYDMUFVKOYVRQV3YXEPEVFZZENYSFHV
+✅ Deployed!
+contractId=CCYNZRGRDN2CNB5SEAB4VD6ELBYDMUFVKOYVRQV3YXEPEVFZZENYSFHV
+
+=== initialize ===
+ℹ️  Simulating transaction…
+ℹ️  Signing transaction: 2001db68d2c0960ff2b102b9e0b09ec6b44b3b865f2e6413a9f7a5c695a14516
+🌎 Sending transaction…
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/2001db68d2c0960ff2b102b9e0b09ec6b44b3b865f2e6413a9f7a5c695a14516
+null
+PASS: election frozen (root + electionId stored, tally zeroed)
+
+=== Test 1 — valid proof is accepted and increments the tally ===
+merkleRoot : 0x02ae654d64e8854e6a56f2da280bd14bd3a8ff00240094dbfc9353956d6a5f45
+electionId : 0x0c5def8ce477d4bbdf7c2dc827dda193a105aab05f210c923df34abe7bebd271
+leaf index : 0  vote: 0
+wrote circuits/input.json and circuits/input.example.json
+npm notice run Anonymous-Goat@0.1.0 npx
+npm notice run 'ctg' zk prove main
+ℹ Using cached snarkjs v0.7.5
+✔ Generated proof for circuit "main"
+ℹ Proof written to: .artifacts/zk/main/proof.json
+ℹ️  Simulating transaction…
+ℹ️  Signing transaction: 6ddf636cfbbfec776d44c012d45fcf2fefc63cb1710e6e936cc131ce8b202b74
+🌎 Sending transaction…
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/6ddf636cfbbfec776d44c012d45fcf2fefc63cb1710e6e936cc131ce8b202b74
+📅 CCYNZRGRDN2CNB5SEAB4VD6ELBYDMUFVKOYVRQV3YXEPEVFZZENYSFHV - Success - Event: VoteCast (VoteCast), nullifier: "3a43757aee13ebaa30a1a9b9ed76bd24666002de2bc778b5af357e4b345f6757", vote: 0
+null
+tally={"gta6":1,"zelda":0}
+PASS: vote recorded, tally is gta6=1 zelda=0
+
+=== Test 2 — invalid proof is reverted with the verification error ===
+tampered nullifier=3a43757aee13ebaa30a1a9b9ed76bd24666002de2bc778b5af357e4b345f6758
+❌ error: transaction simulation failed: HostError: Error(Contract, #8)
+PASS: tampered proof rejected with Error(Contract, #8) (InvalidProof)
+
+=== Test 3 — duplicate vote is rejected (nullifier already used) ===
+❌ error: transaction simulation failed: HostError: Error(Contract, #9)
+PASS: duplicate vote rejected with Error(Contract, #9) (NullifierAlreadyUsed)
+final tally={"gta6":1,"zelda":0}
+
+=== Summary ===
+contract  : CCYNZRGRDN2CNB5SEAB4VD6ELBYDMUFVKOYVRQV3YXEPEVFZZENYSFHV
+Test 1    : valid proof accepted, tally incremented — PASS
+Test 2    : invalid proof rejected (#8 InvalidProof)      — PASS
+Test 3    : duplicate vote rejected (#9 NullifierAlreadyUsed) — PASS
+ALL TESTS PASSED

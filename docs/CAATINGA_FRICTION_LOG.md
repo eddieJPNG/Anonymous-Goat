@@ -227,3 +227,46 @@ Sprint 4 inspecionam o caminho `invoke` (onde o código é confiável).
 `--source-account`, mas não é preciso: `buildXdr` do Caatinga já roda a
 simulação ao montar.
 
+---
+
+## Sprint 4 — Testes automatizados
+
+### F21. `stellar keys show` imprime a chave **privada** (alias de `keys secret`)
+
+Na CLI 30, `keys show` é alias de `keys secret`: devolve o seed `S…` na stdout.
+`ADMIN="$(stellar keys show alice)"` funcionou nos testes (a CLI resolve o seed
+para o endereço no parser de argumentos), mas **grava o segredo no log da
+suíte** — exatamente o que a regra "nunca commitar chaves" proíbe. `keys list`
+também não existe (virou `keys ls`).
+
+**Workaround:** `ADMIN="$(stellar keys public-key alice)"` (alias `address`),
+que devolve o `G…`. A suíte ainda roda um guard que falha o run se um strkey
+`S…` aparecer no log antes de sair (verificado: `docs/E2E_TEST_LOG.txt` limpo).
+
+### F22. `initialize` é one-shot: a suíte precisa de um contrato novo por run
+
+O contrato guarda `MerkleRoot`/`ElectionId`/`Tally` para sempre; um segundo
+`initialize` devolve `#2` (`AlreadyInitialized`) e nullifiers gastos em runs
+anteriores rejeitariam o Teste 3 como `#9` no pior momento.
+
+**Workaround:** `scripts/test.sh` faz `stellar contract deploy --wasm … --
+--admin <G…>` **a cada execução** e extrai o ID da saída
+(`grep -oE 'C[A-Z2-7]{55}'`), sem tocar em `caatinga.artifacts.json` (o ID que
+o frontend usa continua o da Sprint 2). O deploy reaproveita o wasm já
+instalado (`Skipping install because wasm already installed`), então só paga a
+criação do contrato.
+
+### F23. Rejeições do contrato chegam como falha de simulação — e são assertáveis
+
+O `stellar contract invoke` roda a simulação antes de enviar: um `vote`
+inválido **nunca** vira transação, sai com exit ≠ 0 e a mensagem
+`❌ error: transaction simulation failed: HostError: Error(Contract, #8)` no
+stderr. Ou seja, os testes de rejeição não gastam taxa nem sequência, e o
+código `#N` é estável para `grep` (mesmo formato do caminho `invoke` do
+browser, F19).
+
+**Workaround:** `invoke_capture` em `scripts/test.sh` captura stdout+stderr e
+o exit code com `-e` temporariamente levantado; os asserts são
+`grep -q 'Error(Contract, #8)'` / `#9` + checagem de que o placar final não
+mudou.
+

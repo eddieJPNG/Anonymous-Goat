@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "cargo test --manifest-path contracts/verifier/Cargo.toml",
+    "test:e2e": "bash scripts/test.sh",
     "caatinga:build": "npx ctg build verifier",
     "caatinga:deploy": "npx ctg deploy verifier --source ${CAATINGA_SOURCE:-alice}",
     "caatinga:upgrade": "npx ctg upgrade verifier --source ${CAATINGA_SOURCE:-alice}",

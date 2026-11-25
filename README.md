@@ -12,10 +12,10 @@ uma lista pré-aprovada (Merkle tree de profundidade 4) e que ainda não votou �
 identidade da lista controla**. O contrato Soroban verifica a prova on-chain, consome um
 *nullifier* (um por `(secret, electionId)`, logo sem voto duplo) e atualiza o placar público.
 
-> **Status:** Sprints 1–3 concluídas — circuito compilado, contrato na testnet aceitando
-> provas e frontend E2E (conectar carteira → provar no navegador → votar → placar
-> atualizado). Suíte E2E (Sprint 4) e documentação/demo final (Sprint 5) ainda pendentes.
-> Escopo congelado em [`Documents/SSD.md`](Documents/SSD.md), plano em
+> **Status:** Sprints 1–4 concluídas — circuito compilado, contrato na testnet aceitando
+> provas, frontend E2E (conectar carteira → provar no navegador → votar → placar
+> atualizado) e suíte automatizada de rejeição. Documentação/demo final (Sprint 5)
+> pendente. Escopo congelado em [`Documents/SSD.md`](Documents/SSD.md), plano em
 > [`Documents/PLAN.MD`](Documents/PLAN.MD).
 
 ## Requisitos
@@ -173,13 +173,41 @@ com `Error(Contract, #8)` (`InvalidProof`). A tx `198e14…` foi **montada no na
 
 ## Testes
 
+### Unitários (contrato)
+
 ```bash
-cargo test --manifest-path contracts/verifier/Cargo.toml
+npm test        # = cargo test --manifest-path contracts/verifier/Cargo.toml
 ```
 
 Cobrem: prova válida aceita, prova inválida rejeitada, voto duplo rejeitado, root/electionId
 divergentes rejeitados, voto não-binário rejeitado, `initialize` uma única vez e só pelo admin,
 evento `VoteCast`, e o acumulador dos dois candidatos.
+
+### E2E na testnet (Sprint 4)
+
+```bash
+npm run test:e2e        # = bash scripts/test.sh
+```
+
+O script executa do zero e retorna **0 somente se os 3 testes passarem**:
+
+1. **Prova válida** → `vote` aceito e placar incrementado (`{"gta6":1,"zelda":0}`);
+2. **Prova inválida** → revertida com `Error(Contract, #8)` (`InvalidProof`);
+3. **Voto duplo** → rejeitado com `Error(Contract, #9)` (`NullifierAlreadyUsed`).
+
+Detalhes de execução:
+
+- Faz **deploy de um contrato novo a cada execução** — `initialize` é one-shot e os
+  nullifiers do contrato longo já estão gastos. O ID do contrato sai da saída do deploy
+  (não toca em `caatinga.artifacts.json`, usado pelo frontend).
+- Pré-requisitos: `stellar` CLI, Node, identidade de testnet fundada (cria `alice`
+  automaticamente se faltar) e os artefatos ZK (rebuilda com `ctg zk build main --embed-vk`
+  + `prove` + `gen-test-vectors` + `cargo test` se `.artifacts/` não existir).
+- A saída completa é gravada em **[`docs/E2E_TEST_LOG.txt`](docs/E2E_TEST_LOG.txt)**
+  (sobrescrita a cada run; `TEST_LOG=<path>` muda o destino). Um guard falha a suíte se
+  um strkey `S…` (chave privada) aparecer no log.
+- O log do CI/local mostra claramente as rejeições:
+  `❌ error: transaction simulation failed: HostError: Error(Contract, #8)` e `#9`.
 
 ## Trusted setup
 
